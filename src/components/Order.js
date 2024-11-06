@@ -2,7 +2,7 @@ import React from "react";
 import moment from "moment";
 // import Currency from "react-currency-formatter";
 
-function order({ id, amount, amountShipping, items, timestamp, images }) {
+function Order({ id, amount, amountShipping, items, timestamp, images }) {
   return (
     <div className="relative border rounded-md">
       <div className="flex items-center space-x-10 p-5 bg-gray-100 text-sm text-gray-600">
@@ -41,4 +41,4 @@ const formatCurrency = (amount) => {
     currency: "USD",
   }).format(amount);
 };
-export default order;
+export default Order;

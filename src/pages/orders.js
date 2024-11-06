@@ -5,7 +5,7 @@ import { getSession } from "next-auth/react";
 import db from "../../firebase";
 // import { collection } from "firebase/firestore";
 import moment from "moment";
-import Order from "../pages/Order";
+import Order from "../components/order";
 import {
   getFirestore,
   collection,
