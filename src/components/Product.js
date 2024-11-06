@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StarIcon } from "@heroicons/react/24/solid";
-import { addToBasket, updateQuantity } from "../slices/basketSlice"; // import updateQuantity
+import { addToBasket, updateQuantity } from "../slices/basketSlice";
 import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -9,24 +9,24 @@ const MAX_RATING = 5;
 
 function Product({ id, title, price, description, category, image }) {
   const dispatch = useDispatch();
+
   const [rating] = useState(
     Math.floor(Math.random() * (MAX_RATING - MIN_RATING + 1) + MIN_RATING)
   );
   const [hasPrime] = useState(Math.random() < 0.5);
-  const [quantity, setQuantity] = useState(1);
 
-  // Select items in the basket from the Redux store
   const itemsInBasket = useSelector((state) => state.basket.items);
 
-  const addItemToBasket = () => {
-    const existingItemIndex = itemsInBasket.findIndex((item) => item.id === id);
+  const productInBasket = itemsInBasket.find((item) => item.id === id);
+  const quantityInBasket = productInBasket ? productInBasket.quantity : 1; // Default to 1 if not in basket
 
-    if (existingItemIndex >= 0) {
-      // Product already exists, update the quantity
-      const newQuantity = itemsInBasket[existingItemIndex].quantity + 1;
-      dispatch(updateQuantity({ id, quantity: newQuantity }));
+  // Add item to basket or update quantity if it already exists
+  const addItemToBasket = () => {
+    if (productInBasket) {
+      // Product exists, update quantity in basket
+      dispatch(updateQuantity({ id, quantity: productInBasket.quantity + 1 }));
     } else {
-      // Product doesn't exist, add to the basket
+      // Product doesn't exist, add to basket with quantity 1
       const product = {
         id,
         title,
@@ -36,7 +36,7 @@ function Product({ id, title, price, description, category, image }) {
         image,
         rating,
         hasPrime,
-        quantity: 1, // Initial quantity is 1
+        quantity: 1,
       };
       dispatch(addToBasket(product));
     }
@@ -64,7 +64,7 @@ function Product({ id, title, price, description, category, image }) {
       </div>
       <p className="text-xs my-2 line-clamp-2">{description}</p>
       <div className="mb-5">
-        <span>{formatCurrency(price * quantity, "INR")}</span>
+        <span>{formatCurrency(price, "INR")}</span>
       </div>
       {hasPrime && (
         <div className="flex items-center space-x-2 -mt-5">

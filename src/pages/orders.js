@@ -1,93 +1,97 @@
-import React from "react";
-import Header from "../components/Header";
-import { useSession } from "next-auth/react";
-import { getSession } from "next-auth/react";
-import db from "../../firebase";
-// import { collection } from "firebase/firestore";
-import moment from "moment";
+import React, { useState } from "react";
+import { StarIcon } from "@heroicons/react/24/solid";
+import { addToBasket, updateQuantity } from "../slices/basketSlice";
+import Image from "next/image";
+import { useDispatch, useSelector } from "react-redux";
 
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDocs,
-  query,
-  orderBy,
-} from "firebase/firestore";
-import SingleOrder from "../components/SingleOrder";
+const MIN_RATING = 2;
+const MAX_RATING = 5;
 
-function orders({ orders }) {
-  const { data: session } = useSession();
+function Product({ id, title, price, description, category, image }) {
+  const dispatch = useDispatch();
+
+  // Generate rating and prime state
+  const [rating] = useState(
+    Math.floor(Math.random() * (MAX_RATING - MIN_RATING + 1) + MIN_RATING)
+  );
+  const [hasPrime] = useState(Math.random() < 0.5);
+
+  // Select items in the basket from the Redux store
+  const itemsInBasket = useSelector((state) => state.basket.items);
+
+  // Find if the product is already in the basket and its current quantity
+  const productInBasket = itemsInBasket.find((item) => item.id === id);
+  const quantityInBasket = productInBasket ? productInBasket.quantity : 1; // Default to 1 if not in basket
+
+  // Add item to basket or update quantity if it already exists
+  const addItemToBasket = () => {
+    if (productInBasket) {
+      // Product exists, update the quantity in basket
+      dispatch(updateQuantity({ id, quantity: productInBasket.quantity + 1 }));
+    } else {
+      // Product doesn't exist, add to basket with quantity 1
+      const product = {
+        id,
+        title,
+        price,
+        description,
+        category,
+        image,
+        rating,
+        hasPrime,
+        quantity: 1,
+      };
+      dispatch(addToBasket(product));
+    }
+  };
+
   return (
-    <div>
-      <Header />
-      <main className="max-w-screen-lg mx-auto p-10">
-        <h1 className="text-3xl border-b mb-2 pb-1 border-yellow-400">
-          Your Orders
-        </h1>
-
-        {session ? (
-          <h2>{orders.length} Orders</h2>
-        ) : (
-          <h2>Please sign in to see your orders</h2>
-        )}
-        <div className="mt-5 space-y-4">
-          {orders?.map(
-            ({ id, amount, amountShipping, items, timestamp, images }) => (
-              <SingleOrder
-                key={id} // Ensure you use the capitalized "Order"
-                id={id}
-                amount={amount}
-                amountShipping={amountShipping}
-                items={items}
-                timestamp={timestamp}
-                images={images}
-              />
-            )
-          )}
+    <div className="relative flex flex-col bg-white z-30 p-10">
+      <p className="absolute top-2 right-2 text-xs italic text-gray-400">
+        {category}
+      </p>
+      <Image
+        src={image}
+        height={200}
+        width={200}
+        objectFit="contain"
+        alt={title}
+      />
+      <h4>{title}</h4>
+      <div className="flex">
+        {Array(rating)
+          .fill()
+          .map((_, i) => (
+            <StarIcon key={i} className="h-5 text-yellow-500" />
+          ))}
+      </div>
+      <p className="text-xs my-2 line-clamp-2">{description}</p>
+      <div className="mb-5">
+        <span>{formatCurrency(price * quantityInBasket, "INR")}</span>
+      </div>
+      {hasPrime && (
+        <div className="flex items-center space-x-2 -mt-5">
+          <img
+            className="w-12"
+            src="https://www.logolynx.com/images/logolynx/2d/2db930aff3263f71c4bd392aaa3741f7.png"
+            alt="Prime logo"
+          />
+          <p className="text-xs text-gray-500">Free Next-Day Delivery</p>
         </div>
-      </main>
+      )}
+
+      <button onClick={addItemToBasket} className="mt-auto button">
+        Add to Basket
+      </button>
     </div>
   );
 }
 
-export async function getServerSideProps(context) {
-  const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-  const session = await getSession(context);
+const formatCurrency = (quantity, currency = "INR") => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: currency,
+  }).format(quantity);
+};
 
-  if (!session) {
-    return {
-      props: {
-        orders: [], // Return empty orders if the session doesn't exist
-      },
-    };
-  }
-
-  const db = getFirestore();
-  const stripeOrdersRef = collection(db, "users", session.user.email, "orders");
-  const q = query(stripeOrdersRef, orderBy("timestamp", "desc"));
-  const stripeOrders = await getDocs(q);
-
-  const orders = await Promise.all(
-    stripeOrders.docs.map(async (order) => ({
-      id: order.id,
-      amount: order.data().amount,
-      amountShipping: order.data().amount_shipping,
-      images: order.data().images,
-      timestamp: moment(order.data().timestamp.toDate()).unix(),
-      items: (
-        await stripe.checkout.sessions.listLineItems(order.id, {
-          limit: 100,
-        })
-      ).data,
-    }))
-  );
-
-  return {
-    props: {
-      orders, // Passed orders to the page
-    },
-  };
-}
-
-export default orders;
+export default Product;

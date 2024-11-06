@@ -1,14 +1,22 @@
 import React from "react";
-import { useDispatch } from "react-redux";
-import { addToBasket } from "../slices/basketSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { addToBasket, updateQuantity } from "../slices/basketSlice";
 import { StarIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
 
 function ProductDetails({ product }) {
   const dispatch = useDispatch();
+  const itemsInBasket = useSelector((state) => state.basket.items);
+
+  const productInBasket = itemsInBasket.find((item) => item.id === product.id);
 
   const addItemToBasket = () => {
-    dispatch(addToBasket({ ...product, quantity: 1 }));
+    if (productInBasket) {
+      const newQuantity = productInBasket.quantity + 1;
+      dispatch(updateQuantity({ id: product.id, quantity: newQuantity }));
+    } else {
+      dispatch(addToBasket({ ...product, quantity: 1 }));
+    }
   };
 
   return (
