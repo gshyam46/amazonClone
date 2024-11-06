@@ -5,7 +5,6 @@ import { getSession } from "next-auth/react";
 import db from "../../firebase";
 // import { collection } from "firebase/firestore";
 import moment from "moment";
-import Order from "../components/order";
 
 import {
   getFirestore,
@@ -15,6 +14,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import SingleOrder from "../components/SingleOrder";
 
 function orders({ orders }) {
   const { data: session } = useSession();
@@ -34,7 +34,7 @@ function orders({ orders }) {
         <div className="mt-5 space-y-4">
           {orders?.map(
             ({ id, amount, amountShipping, items, timestamp, images }) => (
-              <Order
+              <SingleOrder
                 key={id} // Ensure you use the capitalized "Order"
                 id={id}
                 amount={amount}
