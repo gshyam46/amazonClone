@@ -6,6 +6,7 @@ import db from "../../firebase";
 // import { collection } from "firebase/firestore";
 import moment from "moment";
 import Order from "../components/order";
+
 import {
   getFirestore,
   collection,
@@ -15,7 +16,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 
-function Orders({ orders }) {
+function orders({ orders }) {
   const { data: session } = useSession();
   return (
     <div>
@@ -89,4 +90,4 @@ export async function getServerSideProps(context) {
   };
 }
 
-export default Orders;
+export default orders;
